@@ -1,53 +1,66 @@
 import Head from "next/head";
 import styled from "styled-components";
+import Link from "next/link";
 import tw from "twin.macro";
+import SEO from "../component/seo";
+import { formatDateTImeString } from "../utils/utils";
+import Run from "../component/run";
+import { RunsModel } from "../models/run";
+import mongoose from "mongoose";
 
-const Container = styled.div`
-  ${tw`bg-blue-100`}
-  height: 100%;
-  width: 100%;
-  overflow: auto;
+const Runs = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
 `;
 
-const Content = styled.main`
-  ${tw`m-2 p-8`}
+const RunLink = styled.a`
+  text-decoration: none;
+  color: #f8f8f8;
+  &:hover {
+    background-color: var(--shade-color);
+  }
 `;
 
-const Header = styled.h1`
-  ${tw`font-bold text-6xl`}
-`;
-
-const StyledLink = styled.a`
-  ${tw`text-xl`}
-`;
-
-export default function Home() {
+export default function Home({ runs }) {
   return (
-    <Container>
-      <Head>
-        <title>Next JS with Tailwind and Styled-Components</title>
-      </Head>
-
-      <Content>
-        <Header>
-          This is a basic Next JS site with Styled-Component and Tailwind CSS
-        </Header>
-        <ul>
-          <li>
-            <StyledLink href="https://styled-components.com/">
-              Styled-Components
-            </StyledLink>
-          </li>
-          <li>
-            <StyledLink href="https://tailwindcss.com/">TailwindCSS</StyledLink>
-          </li>
-          <li>
-            <StyledLink href="https://github.com/ben-rogerson/twin.macro">
-              Twin.Macro
-            </StyledLink>
-          </li>
-        </ul>
-      </Content>
-    </Container>
+    <Runs>
+      {/* <SEO title="Hjem" /> */}
+      {runs
+        ?.sort((a, b) => b.start_time - a.start_time)
+        .map((x) => {
+          const start_tid_string = formatDateTImeString(x.start_time);
+          const date = new Date(null);
+          date.setSeconds(x.total_elapsed_time); // specify value for SECONDS here
+          const timeString = date.toISOString().substr(11, 8);
+          const distanceK = Math.floor(x.total_distance / 1000);
+          const distanceM = Math.round(x.total_distance % 1000);
+          const hastighed = Number(x.enhanced_avg_speed).toFixed(2);
+          return (
+            <Link href={`/${x.tag}`} key={x._id} passHref>
+              <RunLink>
+                <Run
+                  {...{
+                    start_tid_string: x.start_time,
+                    timeString,
+                    distanceK,
+                    distanceM,
+                    hastighed,
+                    total_calories: x.total_calories,
+                  }}
+                />
+              </RunLink>
+            </Link>
+          );
+        })}
+    </Runs>
   );
+}
+
+export async function getStaticProps() {
+  await mongoose.connect(process.env.MONGODB, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  const runs = await RunsModel.find();
+  return { props: { runs: JSON.parse(JSON.stringify(runs)) } };
 }

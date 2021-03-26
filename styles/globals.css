@@ -2,14 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --background-color: #211f27;
+  --shade-color: #34313d;
+}
+
 /* CSS Reset */
 body,
 html,
 #__next {
+  background-color: #211f27;
+  background-color: var(--background-color);
   box-sizing: border-box;
   width: 100vw;
   height: 100vh;
   overflow: auto;
+  color: white;
 }
 
 *,
